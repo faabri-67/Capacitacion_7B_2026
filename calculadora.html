@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coeficiente de Reflexión</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent: #4af0c4;
+    --accent2: #f05a4a;
+    --accent3: #f0c44a;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 620px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 1.75rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .header h1 {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  .formula-display {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .formula-display span { color: var(--accent3); }
+
+  .body { padding: 1.75rem 2rem; }
+
+  .input-group { margin-bottom: 1.5rem; }
+
+  .input-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.6rem;
+  }
+
+  .input-label .name {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .input-label .unit {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 2px;
+    background: var(--border2);
+    outline: none;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+
+  .slider-val {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    min-width: 72px;
+    text-align: right;
+  }
+
+  .text-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+  }
+
+  .text-input-row label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 80px;
+  }
+
+  input[type=number] {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 5px 10px;
+    width: 130px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input[type=number]:focus { border-color: var(--accent); }
+
+  .inf-btn {
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .inf-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+  .inf-btn.active { border-color: var(--accent3); color: var(--accent3); background: rgba(240,196,74,0.07); }
+
+  .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .result-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.9rem 1rem;
+  }
+
+  .result-cell.highlight {
+    border-color: rgba(74, 240, 196, 0.3);
+    background: rgba(74, 240, 196, 0.04);
+  }
+
+  .result-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .result-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .result-value.accent { color: var(--accent); }
+  .result-value.danger { color: var(--accent2); }
+  .result-value.warn   { color: var(--accent3); }
+
+  .phase-bar-wrap {
+    margin-top: 0.5rem;
+    height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .phase-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.2s, background 0.2s;
+  }
+
+  .interpretation {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 0.75rem 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    line-height: 1.7;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-right: 6px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .tag-ok   { background: rgba(74,240,196,0.15);  color: var(--accent);  }
+  .tag-warn { background: rgba(240,196,74,0.15);  color: var(--accent3); }
+  .tag-bad  { background: rgba(240,90,74,0.15);   color: var(--accent2); }
+
+  .footer {
+    padding: 0.9rem 2rem;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="header-tag">Líneas de Transmisión</div>
+    <h1>Coeficiente de Reflexión de Tensión</h1>
+    <div class="formula-display">
+      Γ = <span>(Z_R − Z₀) / (Z_R + Z₀)</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- Z0 -->
+    <div class="input-group">
+      <div class="input-label">
+        <span class="name">Z₀ — Impedancia característica de la línea</span>
+        <span class="unit">Ω</span>
+      </div>
+      <div class="slider-row">
+        <input type="range" id="s0" min="0" max="1000" step="1" value="0" oninput="syncFromSlider('z0')">
+        <span class="slider-val" id="sv0">50.00 Ω</span>
+      </div>
+      <div class="text-input-row">
+        <label>Valor exacto:</label>
+        <input type="number" id="z0" min="0" step="any" value="50" oninput="syncFromText('z0')">
+        <button class="inf-btn" id="inf0" onclick="setInf('z0')">∞</button>
+      </div>
+    </div>
+
+    <!-- ZR -->
+    <div class="input-group">
+      <div class="input-label">
+        <span class="name">Z_R — Impedancia de carga (receptor)</span>
+        <span class="unit">Ω</span>
+      </div>
+      <div class="slider-row">
+        <input type="range" id="s1" min="0" max="1000" step="1" value="0" oninput="syncFromSlider('zr')">
+        <span class="slider-val" id="sv1">75.00 Ω</span>
+      </div>
+      <div class="text-input-row">
+        <label>Valor exacto:</label>
+        <input type="number" id="zr" min="0" step="any" value="75" oninput="syncFromText('zr')">
+        <button class="inf-btn" id="inf1" onclick="setInf('zr')">∞</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="results-grid">
+      <div class="result-cell highlight">
+        <div class="result-label">Γ</div>
+        <div class="result-value accent" id="r-gamma">0.2000</div>
+        <div class="phase-bar-wrap">
+          <div class="phase-bar" id="pbar" style="width:60%; background:var(--accent3)"></div>
+        </div>
+      </div>
+      <div class="result-cell">
+        <div class="result-label">|Γ|</div>
+        <div class="result-value" id="r-mag">0.2000</div>
+      </div>
+      <div class="result-cell">
+        <div class="result-label">ROE / VSWR</div>
+        <div class="result-value warn" id="r-roe">1.500</div>
+      </div>
+      <div class="result-cell">
+        <div class="result-label">Pérdida de retorno</div>
+        <div class="result-value" id="r-rl">13.98 dB</div>
+      </div>
+      <div class="result-cell">
+        <div class="result-label">Potencia reflejada</div>
+        <div class="result-value danger" id="r-pr">4.00 %</div>
+      </div>
+      <div class="result-cell">
+        <div class="result-label">Potencia transmitida</div>
+        <div class="result-value accent" id="r-pt">96.00 %</div>
+      </div>
+    </div>
+
+    <div class="interpretation" id="interp"></div>
+  </div>
+
+  <div class="footer">
+    <span>Z₀, Z_R ∈ [0, ∞) — slider logarítmico o ingresá valor exacto</span>
+    <span>RF / Microondas</span>
+  </div>
+</div>
+
+<script>
+  const state = { z0: 50, zr: 75, z0inf: false, zrInf: false };
+  const SMAX = 1000;
+
+  // Slider 0..1000 → valor real con escala logarítmica
+  // s=0 → 0 Ω | s=1..999 → 0.01..~10kΩ (log) | s=1000 → ∞
+  function sliderToVal(s) {
+    if (s <= 0)    return 0;
+    if (s >= SMAX) return Infinity;
+    return Math.pow(10, (s / (SMAX - 1)) * 5 - 2);
+  }
+
+  function valToSlider(v) {
+    if (!isFinite(v) || v > 99999) return SMAX;
+    if (v <= 0) return 0;
+    const s = ((Math.log10(v) + 2) / 5) * (SMAX - 1);
+    return Math.round(Math.max(1, Math.min(SMAX - 1, s)));
+  }
+
+  function fmtVal(v) {
+    if (!isFinite(v)) return '∞';
+    if (v >= 1e6)       return (v / 1e6).toFixed(3) + ' MΩ';
+    if (v >= 1e3)       return (v / 1e3).toFixed(3) + ' kΩ';
+    if (v < 0.1 && v > 0) return v.toFixed(4) + ' Ω';
+    return v.toFixed(2) + ' Ω';
+  }
+
+  function ids(key) {
+    return {
+      sId:  key === 'z0' ? 's0'   : 's1',
+      svId: key === 'z0' ? 'sv0'  : 'sv1',
+      inId: key,
+      ifId: key === 'z0' ? 'inf0' : 'inf1',
+    };
+  }
+
+  function syncFromSlider(key) {
+    const { sId, svId, inId, ifId } = ids(key);
+    const sv  = parseInt(document.getElementById(sId).value);
+    const val = sliderToVal(sv);
+    state[key]           = val;
+    state[key + 'inf']   = !isFinite(val);
+    document.getElementById(svId).textContent = fmtVal(val);
+    document.getElementById(inId).value       = isFinite(val) ? +val.toFixed(4) : '';
+    document.getElementById(inId).placeholder = isFinite(val) ? '' : '∞';
+    document.getElementById(ifId).classList.toggle('active', !isFinite(val));
+    calc();
+  }
+
+  function syncFromText(key) {
+    const { sId, svId, inId, ifId } = ids(key);
+    const val = parseFloat(document.getElementById(inId).value);
+    if (isNaN(val) || val < 0) return;
+    state[key]         = val;
+    state[key + 'inf'] = false;
+    document.getElementById(sId).value        = valToSlider(val);
+    document.getElementById(svId).textContent = fmtVal(val);
+    document.getElementById(ifId).classList.remove('active');
+    calc();
+  }
+
+  function setInf(key) {
+    const { sId, svId, inId, ifId } = ids(key);
+    state[key]         = Infinity;
+    state[key + 'inf'] = true;
+    document.getElementById(sId).value        = SMAX;
+    document.getElementById(svId).textContent = '∞';
+    document.getElementById(inId).value       = '';
+    document.getElementById(inId).placeholder = '∞';
+    document.getElementById(ifId).classList.add('active');
+    calc();
+  }
+
+  function calc() {
+    const z0 = state.z0;
+    const zr = state.zr;
+    let gamma;
+
+    if (!isFinite(z0) && !isFinite(zr)) {
+      // Ambas → ∞: indeterminado; físicamente depende de la relación → tomamos 0
+      gamma = 0;
+    } else if (!isFinite(zr)) {
+      // lim Z_R→∞: (Z_R − Z₀)/(Z_R + Z₀) → 1  (circuito abierto)
+      gamma = 1;
+    } else if (!isFinite(z0)) {
+      // lim Z₀→∞: (Z_R − Z₀)/(Z_R + Z₀) → −1
+      gamma = -1;
+    } else if (z0 === 0 && zr === 0) {
+      gamma = 0;
+    } else if (z0 === 0) {
+      // (zr − 0)/(zr + 0) = 1
+      gamma = 1;
+    } else {
+      gamma = (zr - z0) / (zr + z0);
+    }
+
+    const mag = Math.abs(gamma);
+    const roe = mag >= 1 ? Infinity : (1 + mag) / (1 - mag);
+    const rl  = mag === 0 ? Infinity : -20 * Math.log10(mag);
+    const pr  = mag * mag * 100;
+    const pt  = 100 - pr;
+
+    document.getElementById('r-gamma').textContent = gamma.toFixed(4);
+    document.getElementById('r-mag').textContent   = mag.toFixed(4);
+    document.getElementById('r-roe').textContent   = isFinite(roe) ? roe.toFixed(3) : '∞';
+    document.getElementById('r-rl').textContent    = isFinite(rl)  ? rl.toFixed(2) + ' dB' : '∞ dB';
+    document.getElementById('r-pr').textContent    = pr.toFixed(2) + ' %';
+    document.getElementById('r-pt').textContent    = pt.toFixed(2) + ' %';
+
+    const gEl = document.getElementById('r-gamma');
+    if (Math.abs(gamma) < 0.001) gEl.className = 'result-value accent';
+    else if (gamma > 0)          gEl.className = 'result-value warn';
+    else                         gEl.className = 'result-value danger';
+
+    const barPct = ((gamma + 1) / 2) * 100;
+    const pbar   = document.getElementById('pbar');
+    pbar.style.width      = barPct.toFixed(1) + '%';
+    pbar.style.background = gamma >= 0 ? 'var(--accent3)' : 'var(--accent2)';
+
+    let tag, msg;
+    if (!isFinite(zr)) {
+      tag = '<span class="tag tag-bad">Circuito abierto</span>';
+      msg = 'Z_R → ∞ &nbsp;⟹&nbsp; Γ = +1. Reflexión total en fase. Tensión máxima, corriente nula en la carga.';
+    } else if (zr === 0) {
+      tag = '<span class="tag tag-bad">Cortocircuito</span>';
+      msg = 'Z_R = 0 &nbsp;⟹&nbsp; Γ = −1. Reflexión total con inversión de fase. Tensión nula, corriente máxima.';
+    } else if (mag < 0.01) {
+      tag = '<span class="tag tag-ok">Adaptado</span>';
+      msg = 'Z_R ≈ Z₀. Sin reflexión. Transferencia de potencia máxima. ROE = 1.';
+    } else if (mag <= 0.2) {
+      tag = '<span class="tag tag-warn">Aceptable</span>';
+      msg = 'Desadaptación leve. Pérdida de retorno ≥ 14 dB. Válido en la mayoría de sistemas.';
+    } else if (mag <= 0.5) {
+      tag = '<span class="tag tag-warn">Desadaptado</span>';
+      msg = 'Desadaptación moderada. Considerar transformador λ/4 o red de adaptación L, π, T.';
+    } else {
+      tag = '<span class="tag tag-bad">Severo</span>';
+      msg = 'Desadaptación grave. Alta potencia reflejada. Riesgo en etapas de potencia.';
+    }
+    document.getElementById('interp').innerHTML = tag + msg;
+  }
+
+  // Inicializar sliders con los valores por defecto
+  document.getElementById('s0').value = valToSlider(50);
+  document.getElementById('s1').value = valToSlider(75);
+  calc();
+</script>
+</body>
+</html>
